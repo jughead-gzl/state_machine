@@ -583,7 +583,7 @@ private:
      *
      * 其他地图目录通常以该路径为基准进行拼接。
      */
-    std::string base_path_{""};
+    std::filesystem::path base_path_{""};
 
     /** @brief 用户自建地图的相对目录或目录名称。 */
     std::string self_built_map_directory_{""};
@@ -614,7 +614,7 @@ public:
      * @brief 获取地图根目录。
      * @return 地图根目录的只读引用。
      */
-    const std::string& GetBasePath() const noexcept
+    const std::filesystem::path& GetBasePath() const noexcept
     {
         return base_path_;
     }
@@ -623,7 +623,7 @@ public:
      * @brief 设置地图根目录。
      * @param path 新的地图根目录。
      */
-    template <typename T, typename = std::enable_if_t<std::is_convertible_v<T, std::string>>>
+    template <typename T, typename = std::enable_if_t<std::is_convertible_v<T, std::filesystem::path>>>
     void SetBasePath(T&& path)
     {
         base_path_ = std::forward<T>(path);
@@ -642,9 +642,9 @@ public:
      * @brief 获取用户自建地图的完整存储路径。
      * @return 地图根目录与用户自建地图目录拼接后的路径。
      */
-    const std::string GetSelfBuiltMapPath() const noexcept
+    const std::filesystem::path GetSelfBuiltMapPath() const noexcept
     {
-        return base_path_ + self_built_map_directory_;
+        return base_path_ / self_built_map_directory_;
     }
 
     /**
@@ -670,9 +670,9 @@ public:
      * @brief 获取官方地图的完整存储路径。
      * @return 地图根目录与官方地图目录拼接后的路径。
      */
-    const std::string GetOfficialMapPath() const noexcept
+    const std::filesystem::path GetOfficialMapPath() const noexcept
     {
-        return base_path_ + official_map_directory_;
+        return base_path_ / official_map_directory_;
     }
 
     /**
@@ -698,9 +698,9 @@ public:
      * @brief 获取车位到车位地图的完整存储路径。
      * @return 地图根目录与车位到车位地图目录拼接后的路径。
      */
-    const std::string GetParkToParkMapPath() const noexcept
+    const std::filesystem::path GetParkToParkMapPath() const noexcept
     {
-        return base_path_ + park2park_map_directory_;
+        return base_path_ / park2park_map_directory_;
     }
 
     /**
@@ -725,9 +725,9 @@ public:
      * @brief 获取共享地图的完整存储路径。
      * @return 地图根目录与共享地图目录拼接后的路径。
      */
-    const std::string GetSharedMapPath() const noexcept
+    const std::filesystem::path GetSharedMapPath() const noexcept
     {
-        return base_path_ + shared_map_directory_;
+        return base_path_ / shared_map_directory_;
     }
     /**
      * @brief 设置共享地图目录。
@@ -856,16 +856,15 @@ public:
      * @param path 待扫描的地图目录。
      * @return 当前加载操作的执行结果。
      */
-    bool LoadMapInfoList(const std::string& path) const
+    bool LoadMapInfoList(const std::filesystem::path& path) const
     {
-        const std::filesystem::path map_directory(path);
-        if (!std::filesystem::exists(map_directory) || !std::filesystem::is_directory(map_directory))
+        if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
         {
             return false;
         }
 
         bool ret = false;
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(map_directory))
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(path))
         {
             if (entry.is_regular_file() && entry.path().extension() == ".json") 
             {
@@ -882,7 +881,7 @@ public:
      */
     bool LoadSelfBuiltMapList() const
     {
-        return LoadMapInfoList(base_path_ + self_built_map_directory_);
+        return LoadMapInfoList(base_path_ / self_built_map_directory_);
     }
     /**
      * @brief 加载官方地图列表。
@@ -890,7 +889,7 @@ public:
      */
     bool LoadOfficialMapList() const
     {
-        return LoadMapInfoList(base_path_ + official_map_directory_);
+        return LoadMapInfoList(base_path_ / official_map_directory_);
     }
     /**
      * @brief 加载车位到车位地图列表。
@@ -898,7 +897,7 @@ public:
      */
     bool LoadPark2ParkMapList() const
     {
-        return LoadMapInfoList(base_path_ + park2park_map_directory_);
+        return LoadMapInfoList(base_path_ / park2park_map_directory_);
     }
     /**
      * @brief 加载共享地图列表。
@@ -906,7 +905,7 @@ public:
      */
     bool LoadSharedMapList() const
     {
-        return LoadMapInfoList(base_path_ + shared_map_directory_);
+        return LoadMapInfoList(base_path_ / shared_map_directory_);
     }
 public:
     /**
@@ -1120,14 +1119,13 @@ public:
     park2park_map_directory_(std::forward<T>(park2park_map_path)),
     shared_map_directory_(std::forward<T>(shared_map_path))
     {
-        std::filesystem::path base_directory = base_path_;
-        std::filesystem::path self_built_map_path = base_directory / self_built_map_directory_;
-        std::filesystem::path official_map_path = base_directory / official_map_directory_;
-        std::filesystem::path park2park_map_path = base_directory / park2park_map_directory_;
-        std::filesystem::path shared_map_path = base_directory / shared_map_directory_;
-
-        if (std::filesystem::exists(base_directory) && std::filesystem::is_directory(base_directory))
+        if (std::filesystem::exists(base_path_) && std::filesystem::is_directory(base_path_))
         {
+            std::filesystem::path self_built_map_path = base_path_ / self_built_map_directory_;
+            std::filesystem::path official_map_path = base_path_ / official_map_directory_;
+            std::filesystem::path park2park_map_path = base_path_ / park2park_map_directory_;
+            std::filesystem::path shared_map_path = base_path_ / shared_map_directory_;
+
             if (std::filesystem::exists(self_built_map_path) && std::filesystem::is_directory(self_built_map_path))
             {
                 std::cout << "self-built map path : " << self_built_map_path.c_str() << std::endl;
@@ -1136,6 +1134,7 @@ public:
             {
                 std::filesystem::create_directories(self_built_map_path);
             }
+
             if (std::filesystem::exists(official_map_path) && std::filesystem::is_directory(official_map_path))
             {
                 std::cout << "official map path : " << official_map_path.c_str() << std::endl;
@@ -1144,6 +1143,7 @@ public:
             {
                 std::filesystem::create_directories(official_map_path);
             }
+
             if (std::filesystem::exists(park2park_map_path) && std::filesystem::is_directory(park2park_map_path))
             {
                 std::cout << "park2park map path : " << park2park_map_path.c_str() << std::endl;
@@ -1152,6 +1152,7 @@ public:
             {
                 std::filesystem::create_directories(park2park_map_path);
             }
+
             if (std::filesystem::exists(shared_map_path) && std::filesystem::is_directory(shared_map_path))
             {
                 std::cout << "shared map path : " << shared_map_path.c_str() << std::endl;
@@ -1163,7 +1164,7 @@ public:
         }
         else
         {
-            std::filesystem::create_directories(base_directory);
+            throw std::runtime_error("Base path does not exist or is not a directory: " + base_path_.string());
         }
     }
 };
