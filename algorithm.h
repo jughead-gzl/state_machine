@@ -2,7 +2,9 @@
 
 #include "structure.h"
 
+#include <array>
 #include <stdint.h>
+#include <vector>
 
 template <typename T>
 using Odometry = Point6D<T>;
@@ -69,3 +71,7 @@ private:
     PakringSlotCenter center_;
     PakringSlotVertics vertices_; 
 };
+
+// Keep the map domain model vocabulary compatible with existing callers.
+template <typename T>
+using PrkgSlot = ParkingSlot<T>;
